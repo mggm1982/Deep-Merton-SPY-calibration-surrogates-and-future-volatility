@@ -1,0 +1,21 @@
+{
+  "zip_crc": true,
+  "extraction_verified": true,
+  "clean_generated_outputs_before_rerun": true,
+  "notebook_all_code_cells_executed": true,
+  "notebook_error_outputs": 0,
+  "prediction_files_byte_identical": {
+    "test_volatility.csv": true,
+    "test_parameters.csv": true,
+    "validation_parameters.csv": true,
+    "validation_volatility.csv": true,
+    "example_prediction.json": true
+  },
+  "pytest": "26 passed",
+  "independent_verification_checks": 11,
+  "plots_visually_inspected": 5,
+  "hosted_colab_executed": false,
+  "live_option_comparison_executed": false,
+  "runtime": "Python 3.12.14; pinned dependencies; fresh kernel; CPU",
+  "note": "No model or hyperparameter changes were made based on test scores."
+}

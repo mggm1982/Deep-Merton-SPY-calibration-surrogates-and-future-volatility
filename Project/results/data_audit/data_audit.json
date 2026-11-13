@@ -1,0 +1,94 @@
+{
+  "train": {
+    "rows": 990,
+    "columns": {
+      "Date": "object",
+      "Close": "float64",
+      "High": "float64",
+      "Low": "float64",
+      "Open": "float64",
+      "Volume": "int64",
+      "returns": "float64",
+      "realized_vol": "float64",
+      "realized_skew": "float64",
+      "realized_kurt": "float64",
+      "is_jump": "bool"
+    },
+    "start": "2019-01-31",
+    "end": "2023-01-04",
+    "missing": {
+      "Date": 0,
+      "Close": 0,
+      "High": 0,
+      "Low": 0,
+      "Open": 0,
+      "Volume": 0,
+      "returns": 0,
+      "realized_vol": 0,
+      "realized_skew": 0,
+      "realized_kurt": 0,
+      "is_jump": 0
+    },
+    "duplicate_dates": 0,
+    "calendar_gap_counts": {
+      "1.0": 777,
+      "3.0": 177,
+      "4.0": 28,
+      "2.0": 7
+    }
+  },
+  "test": {
+    "rows": 248,
+    "columns": {
+      "Price": "object",
+      "Close": "float64",
+      "High": "float64",
+      "Low": "float64",
+      "Open": "float64",
+      "Volume": "int64",
+      "returns": "float64",
+      "realized_vol": "float64",
+      "realized_skew": "float64",
+      "realized_kurt": "float64",
+      "is_jump": "bool"
+    },
+    "start": "2023-01-05",
+    "end": "2023-12-29",
+    "missing": {
+      "Price": 0,
+      "Close": 0,
+      "High": 0,
+      "Low": 0,
+      "Open": 0,
+      "Volume": 0,
+      "returns": 0,
+      "realized_vol": 0,
+      "realized_skew": 0,
+      "realized_kurt": 0,
+      "is_jump": 0
+    },
+    "duplicate_dates": 0,
+    "calendar_gap_counts": {
+      "1.0": 194,
+      "3.0": 44,
+      "4.0": 7,
+      "2.0": 2
+    }
+  },
+  "initial_price_only_row": "2019-01-31",
+  "max_supplied_return_error": 1.1701054314396651e-08,
+  "supplied_return_tolerance": 1e-06,
+  "price_policy": "Use supplied Close unchanged; adjustment/dividend provenance unknown.",
+  "unused_fields": [
+    "High",
+    "Low",
+    "Open",
+    "Volume",
+    "returns",
+    "realized_vol",
+    "realized_skew",
+    "realized_kurt",
+    "is_jump"
+  ],
+  "missing_sessions_policy": "Observed sessions only; no forward-fill. Exchange-calendar completeness not established."
+}

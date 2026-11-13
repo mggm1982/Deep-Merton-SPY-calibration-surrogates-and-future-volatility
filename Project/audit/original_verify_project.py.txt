@@ -1,0 +1,37 @@
+"""Independent integrity checks; run python src/verify_project.py from any directory."""
+from pathlib import Path
+import json, hashlib, sys
+import numpy as np,pandas as pd
+from sklearn.metrics import mean_absolute_error,mean_squared_error,r2_score
+from complete_pipeline import ROOT,NAMES,example_predict
+m=json.loads((ROOT/'run_manifest.json').read_text()); checks=[]
+for f,h in m['raw_sha256'].items():
+ assert hashlib.sha256((ROOT/'data/raw'/f).read_bytes()).hexdigest()==h
+checks.append('Raw bytes agree with recorded SHA256')
+metrics=pd.read_csv(ROOT/'results/metrics/parameter_metrics.csv')
+for split in ['validation','test']:
+ p=pd.read_csv(ROOT/f'results/predictions/{split}_predictions.csv')
+ for _,a in metrics.query('split==@split').iterrows():
+  y=p['actual_'+a.target]; yh=p[a.model+'_'+a.target]
+  for k,v in [('MAE',mean_absolute_error(y,yh)),('RMSE',np.sqrt(mean_squared_error(y,yh))),('R2',r2_score(y,yh))]: assert np.isclose(v,a[k],rtol=1e-8,atol=1e-10)
+checks.append('All parameter metrics recompute from saved CSVs')
+f=pd.read_csv(ROOT/'results/predictions/future_volatility.csv'); fm=pd.read_csv(ROOT/'results/metrics/future_volatility.csv')
+for _,a in fm.iterrows():
+ for k,v in [('MAE',mean_absolute_error(f.actual_future_vol,f[a.model])),('RMSE',np.sqrt(mean_squared_error(f.actual_future_vol,f[a.model]))),('R2',r2_score(f.actual_future_vol,f[a.model]))]: assert np.isclose(v,a[k])
+checks.append('Future-volatility metrics recompute')
+x=example_predict(); p=pd.read_csv(ROOT/'results/predictions/test_predictions.csv')
+assert np.allclose(list(x.values()),[p['lstm_'+n].iloc[0] for n in NAMES],atol=1e-7)
+checks.append('Saved LSTM and preprocessing reload')
+obs=pd.read_csv(ROOT/'data/processed/observations.csv')
+for split in ['validation','test']:
+ p=pd.read_csv(ROOT/f'results/predictions/{split}_predictions.csv'); targets=pd.read_csv(ROOT/f'data/processed/{split}_targets.csv')
+ assert (pd.to_datetime(p.date).to_numpy()==pd.to_datetime(obs.date.iloc[p.end_index]).to_numpy()).all()
+ assert np.array_equal(p.source_row,obs.source_row.iloc[p.end_index])
+ for n in NAMES: assert np.allclose(p['actual_'+n],targets[n])
+checks.append('Dates, row identifiers and reference targets align')
+for p in m['outputs']: assert (ROOT/p).is_file(),p
+for p in ['README.md','config.json','requirements.txt','notebooks/Finance_Project.ipynb','report/project_summary.md','report/viva_questions.md','report/presentation.html']: assert (ROOT/p).is_file()
+assert all(m['checks'].values())
+checks.append('Required paths and pipeline assertions pass')
+(ROOT/'results/data_audit/verification.json').write_text(json.dumps({'passed':checks,'unexecuted':['Hosted Google Colab session','Optional live option comparison']},indent=2))
+print('\n'.join(checks))

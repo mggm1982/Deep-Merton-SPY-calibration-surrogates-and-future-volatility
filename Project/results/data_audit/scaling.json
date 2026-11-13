@@ -1,0 +1,28 @@
+{
+  "parameters": {
+    "fit_sample_count": 134,
+    "last_fit_origin": "2022-03-22",
+    "last_fit_target_end": "2022-04-21",
+    "feature_condition_number": 90.27763143169773,
+    "ridge_alpha": 1.0,
+    "architecture": {
+      "hidden": 8,
+      "n_stats": 13,
+      "n_outputs": 5,
+      "dropout": 0.15
+    }
+  },
+  "volatility": {
+    "fit_sample_count": 134,
+    "last_fit_origin": "2022-03-22",
+    "last_fit_target_end": "2022-04-21",
+    "feature_condition_number": 90.27763143169773,
+    "ridge_alpha": 100.0,
+    "architecture": {
+      "hidden": 16,
+      "n_stats": 13,
+      "n_outputs": 1,
+      "dropout": 0.15
+    }
+  }
+}

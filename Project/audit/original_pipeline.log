@@ -1,0 +1,30 @@
+Matplotlib is building the font cache; this may take a moment.
+{
+  "selected": "lstm",
+  "scores": {
+    "mean": 1.1100661685761906,
+    "ridge": 1.409655926854993,
+    "lstm": 1.0054769756699964
+  },
+  "partitions": {
+    "fit": {
+      "n_windows": 151,
+      "first_end": "2019-03-04",
+      "last_end": "2022-02-22",
+      "first_start": "2019-02-01"
+    },
+    "validation": {
+      "n_windows": 39,
+      "first_end": "2022-03-29",
+      "last_end": "2022-12-29",
+      "first_start": "2022-03-01"
+    },
+    "test": {
+      "n_windows": 50,
+      "first_end": "2023-01-05",
+      "last_end": "2023-12-27",
+      "first_start": "2022-12-06"
+    }
+  },
+  "seconds": 140.25538362498628
+}

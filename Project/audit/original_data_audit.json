@@ -1,0 +1,90 @@
+{
+  "train": {
+    "rows": 990,
+    "columns": {
+      "Date": "object",
+      "Close": "float64",
+      "High": "float64",
+      "Low": "float64",
+      "Open": "float64",
+      "Volume": "int64",
+      "returns": "float64",
+      "realized_vol": "float64",
+      "realized_skew": "float64",
+      "realized_kurt": "float64",
+      "is_jump": "bool"
+    },
+    "missing": {
+      "Date": 0,
+      "Close": 0,
+      "High": 0,
+      "Low": 0,
+      "Open": 0,
+      "Volume": 0,
+      "returns": 0,
+      "realized_vol": 0,
+      "realized_skew": 0,
+      "realized_kurt": 0,
+      "is_jump": 0
+    },
+    "duplicates": 0,
+    "duplicate_timestamps": 0,
+    "ordered": true,
+    "start": "2019-01-31",
+    "end": "2023-01-04",
+    "gap_days_counts": {
+      "1.0": 777,
+      "3.0": 177,
+      "4.0": 28,
+      "2.0": 7
+    }
+  },
+  "test": {
+    "rows": 248,
+    "columns": {
+      "Price": "object",
+      "Close": "float64",
+      "High": "float64",
+      "Low": "float64",
+      "Open": "float64",
+      "Volume": "int64",
+      "returns": "float64",
+      "realized_vol": "float64",
+      "realized_skew": "float64",
+      "realized_kurt": "float64",
+      "is_jump": "bool"
+    },
+    "missing": {
+      "Price": 0,
+      "Close": 0,
+      "High": 0,
+      "Low": 0,
+      "Open": 0,
+      "Volume": 0,
+      "returns": 0,
+      "realized_vol": 0,
+      "realized_skew": 0,
+      "realized_kurt": 0,
+      "is_jump": 0
+    },
+    "duplicates": 0,
+    "duplicate_timestamps": 0,
+    "ordered": true,
+    "start": "2023-01-05",
+    "end": "2023-12-29",
+    "gap_days_counts": {
+      "1.0": 194,
+      "3.0": 44,
+      "4.0": 7,
+      "2.0": 2
+    }
+  },
+  "checks": {
+    "overlap_dates": 0,
+    "max_supplied_log_return_error": 1.1701054431937719e-08,
+    "max_trailing20_vol_error": 3.859578615039716e-09,
+    "max_trailing20_skew_error": 2.9930663984767403e-07,
+    "max_trailing20_kurt_error": 9.440210142486194e-07,
+    "poisson_omitted_mass_at_max_lambda": 3.214697303345178e-13
+  }
+}

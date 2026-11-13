@@ -1,0 +1,6 @@
+{
+  "median_test_mle_seconds": 0.02293947953148745,
+  "parameters_all_three_models_median_seconds": 0.0003589790139812976,
+  "volatility_all_three_models_median_seconds": 0.00035460348590277135,
+  "scope": "Warm CPU wall clock. MLE includes multistart calibration; inference includes scaling and mean/Ridge/LSTM, excludes feature construction, disk IO and training."
+}

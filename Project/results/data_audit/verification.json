@@ -1,0 +1,26 @@
+{
+  "passed": [
+    "Raw-file SHA256 hashes verified",
+    "Forward targets strictly precede the next split's first forecast origin",
+    "All saved scaler means recomputed from fit data only",
+    "Prediction/reference dates and source rows match raw observations",
+    "Future labels independently recomputed from t+1 through t+H",
+    "Saved Ridge/LSTM/mean inference matches all prediction CSVs",
+    "Inference is deterministic",
+    "Parameter and future-volatility metrics independently recompute",
+    "Every calibration has a successful start and an adequate Poisson truncation",
+    "Saved example prediction reproduces exactly",
+    "No runtime warnings captured"
+  ],
+  "limitations": [
+    "Prior test exposure; no claim of a fresh unseen holdout.",
+    "Physical-measure calibration; not option-market pricing.",
+    "Raw price adjustment provenance unknown.",
+    "Overlapping windows and outcomes.",
+    "BIC is a conservative heuristic in a nonregular mixture, not a jump significance test."
+  ],
+  "not_executed": [
+    "Hosted Colab session",
+    "Optional live option comparison"
+  ]
+}

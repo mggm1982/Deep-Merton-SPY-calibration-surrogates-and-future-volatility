@@ -1,0 +1,169 @@
+{
+  "config": {
+    "seed": 42,
+    "window": 21,
+    "stride": 5,
+    "validation_fraction": 0.2,
+    "epochs": 160,
+    "hidden": 16,
+    "learning_rate": 0.003,
+    "poisson_terms": 12,
+    "bounds": [
+      [
+        -0.05,
+        0.05
+      ],
+      [
+        0.001,
+        0.15
+      ],
+      [
+        0.0001,
+        0.5
+      ],
+      [
+        -0.15,
+        0.15
+      ],
+      [
+        0.001,
+        0.15
+      ]
+    ]
+  },
+  "versions": {
+    "python": "3.12.14 (main, Aug 25 2026, 14:00:49) [Clang 22.1.3 ]",
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "torch": "2.14.1+cu130",
+    "joblib": "1.5.3",
+    "matplotlib": "3.10.8"
+  },
+  "platform": "Linux-6.18.55-x86_64-with-glibc2.39",
+  "partitions": {
+    "fit": {
+      "n_windows": 151,
+      "first_end": "2019-03-04",
+      "last_end": "2022-02-22",
+      "first_start": "2019-02-01"
+    },
+    "validation": {
+      "n_windows": 39,
+      "first_end": "2022-03-29",
+      "last_end": "2022-12-29",
+      "first_start": "2022-03-01"
+    },
+    "test": {
+      "n_windows": 50,
+      "first_end": "2023-01-05",
+      "last_end": "2023-12-27",
+      "first_start": "2022-12-06"
+    }
+  },
+  "features": [
+    "log_return_lag_20",
+    "log_return_lag_19",
+    "log_return_lag_18",
+    "log_return_lag_17",
+    "log_return_lag_16",
+    "log_return_lag_15",
+    "log_return_lag_14",
+    "log_return_lag_13",
+    "log_return_lag_12",
+    "log_return_lag_11",
+    "log_return_lag_10",
+    "log_return_lag_9",
+    "log_return_lag_8",
+    "log_return_lag_7",
+    "log_return_lag_6",
+    "log_return_lag_5",
+    "log_return_lag_4",
+    "log_return_lag_3",
+    "log_return_lag_2",
+    "log_return_lag_1",
+    "log_return_lag_0"
+  ],
+  "selected_model": "lstm",
+  "best_epoch": 153,
+  "checks": {
+    "model_reload": true,
+    "ridge_reload": true,
+    "raw_files_unchanged": true,
+    "fit_validation_windows_disjoint": true,
+    "test_origins_after_training": true,
+    "prediction_alignment": true,
+    "metrics_recomputed_from_csv": true
+  },
+  "elapsed_seconds": 12.765981570999429,
+  "raw_sha256": {
+    "spy_test_data.csv": "b0255eba7ab0da7de4281fbb3aceeb2f79526860c5160dfd618f7c06e416e267",
+    "Guide.pdf": "fd5b922f0c5f964aea16566bb24c8fea615bfb8da7741e900ec26dd9b65d6ef3",
+    "spy_train_data.csv": "cc04840534eaf83ba6ab650a5ae22e250568379bfda77dfc42871dbf031a0f1e"
+  },
+  "outputs": [
+    "README.md",
+    "config.json",
+    "data/processed/example_input.csv",
+    "data/processed/fit_targets.csv",
+    "data/processed/observations.csv",
+    "data/processed/test_targets.csv",
+    "data/processed/validation_targets.csv",
+    "data/raw/Guide.pdf",
+    "data/raw/spy_test_data.csv",
+    "data/raw/spy_train_data.csv",
+    "models/lstm.pt",
+    "models/preprocessing.joblib",
+    "models/ridge.joblib",
+    "notebooks/Finance_Project.ipynb",
+    "report/presentation.html",
+    "report/project_summary.md",
+    "report/viva_questions.md",
+    "requirements.txt",
+    "results/data_audit/calibration_diagnostics.csv",
+    "results/data_audit/data_audit.json",
+    "results/data_audit/leakage_audit.md",
+    "results/data_audit/verification.json",
+    "results/figures/errors.png",
+    "results/figures/future_volatility.png",
+    "results/figures/parameters.png",
+    "results/figures/training.png",
+    "results/metrics/future_volatility.csv",
+    "results/metrics/parameter_metrics.csv",
+    "results/metrics/selection.json",
+    "results/metrics/timing.json",
+    "results/metrics/training_history.csv",
+    "results/predictions/dropout_dispersion.csv",
+    "results/predictions/example_prediction.json",
+    "results/predictions/future_volatility.csv",
+    "results/predictions/test_predictions.csv",
+    "results/predictions/validation_predictions.csv",
+    "src/complete_pipeline.py",
+    "src/verify_project.py"
+  ],
+  "unexecuted": [
+    "Live option-market comparison: no option quotes supplied; optional",
+    "External Colab service session: notebook workflow checked locally"
+  ],
+  "evaluation": "Same-window calibration at close t; rolling origins every five observations. Secondary frozen-parameter next-21-observation volatility proxy; overlapping outcomes, descriptive metrics only.",
+  "delivery_verification": {
+    "passed": [
+      "Raw bytes agree with recorded SHA256",
+      "All parameter metrics recompute from saved CSVs",
+      "Future-volatility metrics recompute",
+      "Saved LSTM and preprocessing reload",
+      "Dates, row identifiers and reference targets align",
+      "Required paths and pipeline assertions pass",
+      "Original supplied CSV and PDF bytes unchanged",
+      "Notebook shared-source and example cells executed locally",
+      "Plots visually inspected",
+      "ZIP CRC and extraction verified",
+      "Pipeline rerun from extracted ZIP; predictions exactly reproduced"
+    ],
+    "unexecuted": [
+      "Hosted Google Colab session",
+      "Optional live option comparison"
+    ]
+  }
+}

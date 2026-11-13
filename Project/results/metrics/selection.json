@@ -1,0 +1,27 @@
+{
+  "parameter_model": "persistence",
+  "parameter_scores": {
+    "ridge": 1.805169142187663,
+    "lstm": 2.2361596429696844,
+    "mean": 3.429518673791823,
+    "persistence": 0.026774891320788013
+  },
+  "parameter_criterion": "standardized transformed-parameter MSE",
+  "forecast_model": "mle_total_vol",
+  "forecast_scores": {
+    "training_mean": 0.07784762305986821,
+    "historical_21d": 0.06418456474449753,
+    "ewma": 0.058200819952434354,
+    "mle_total_vol": 0.056527723151967274,
+    "raw_mjd_total_vol": 0.05661627114565149,
+    "mean_total_vol": 0.11489593317124365,
+    "ridge_total_vol": 0.10424337002809415,
+    "lstm_total_vol": 0.11658611838639134,
+    "direct_ridge": 0.09112253869589272,
+    "direct_lstm": 0.07972397522739649
+  },
+  "forecast_criterion": "next-H-session annualized volatility RMSE",
+  "models_frozen_before_test": true,
+  "test_used_for_tuning": false,
+  "prior_test_exposure": "Supplied 2023 test results were already reported in the original project; this is a fixed rerun holdout, not a newly unseen dataset."
+}

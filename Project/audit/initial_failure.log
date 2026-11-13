@@ -1,0 +1,6 @@
+Command: python3 /Users/rajdeeppurohit/Desktop/finance_project/src/complete_pipeline.py
+Python: 3.14.3
+ModuleNotFoundError: No module named 'torch'
+
+Notebook saved error: Failed to connect to the remote Jupyter Server.
+Shared chat was read through browser; it describes the prior delivered project.

@@ -1,0 +1,12 @@
+{
+  "criterion": "mean squared error in fit-target standard deviations",
+  "validation_scores": {
+    "mean": 1.1100661685761906,
+    "ridge": 1.409655926854993,
+    "lstm": 1.0054769756699964
+  },
+  "selected_model": "lstm",
+  "lstm_epoch": 128,
+  "refit": false,
+  "test_not_used": true
+}

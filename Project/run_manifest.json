@@ -1,0 +1,204 @@
+{
+  "config": {
+    "seed": 42,
+    "annualization": 252,
+    "mle_window": 126,
+    "sequence_length": 21,
+    "horizon": 21,
+    "stride": 5,
+    "validation_fraction": 0.2,
+    "poisson_tail_tolerance": 1e-12,
+    "mle_maxiter": 500,
+    "bounds": [
+      [
+        -0.03,
+        0.03
+      ],
+      [
+        0.0001,
+        0.15
+      ],
+      [
+        0.0,
+        1.0
+      ],
+      [
+        -0.2,
+        0.2
+      ],
+      [
+        0.0,
+        0.2
+      ]
+    ],
+    "ridge_alphas": [
+      0.1,
+      1.0,
+      10.0,
+      100.0,
+      1000.0
+    ],
+    "lstm_hidden_sizes": [
+      8,
+      16
+    ],
+    "epochs": 200,
+    "patience": 25,
+    "learning_rate": 0.003,
+    "weight_decay": 0.001,
+    "dropout": 0.15,
+    "gradient_clip": 1.0,
+    "ewma_decay": 0.94
+  },
+  "versions": {
+    "numpy": "2.3.5",
+    "pandas": "2.2.3",
+    "scipy": "1.17.0",
+    "scikit-learn": "1.8.0",
+    "torch": "2.14.1",
+    "joblib": "1.5.3",
+    "matplotlib": "3.10.8"
+  },
+  "python": "3.12.14",
+  "platform": "macOS-27.0.1-arm64-arm-64bit",
+  "raw_sha256": {
+    "Guide.pdf": "fd5b922f0c5f964aea16566bb24c8fea615bfb8da7741e900ec26dd9b65d6ef3",
+    "spy_test_data.csv": "b0255eba7ab0da7de4281fbb3aceeb2f79526860c5160dfd618f7c06e416e267",
+    "spy_train_data.csv": "cc04840534eaf83ba6ab650a5ae22e250568379bfda77dfc42871dbf031a0f1e"
+  },
+  "partitions": {
+    "fit": {
+      "n": 134,
+      "first_origin": "2019-08-01",
+      "last_origin": "2022-03-22",
+      "last_target_end": "2022-04-21"
+    },
+    "validation": {
+      "n": 31,
+      "first_origin": "2022-04-27",
+      "last_origin": "2022-11-30",
+      "last_target_end": "2022-12-30"
+    },
+    "test": {
+      "n": 46,
+      "first_origin": "2023-01-05",
+      "last_origin": "2023-11-28",
+      "last_target_end": "2023-12-28"
+    }
+  },
+  "feature_names": [
+    "mean_5",
+    "vol_5",
+    "mean_21",
+    "vol_21",
+    "vol_63",
+    "vol_window",
+    "skew_window",
+    "excess_kurtosis_window",
+    "q05_window",
+    "q95_window",
+    "last_return",
+    "ewma_vol",
+    "downside_rms_window"
+  ],
+  "sequence_channels": [
+    "log_return",
+    "absolute_log_return"
+  ],
+  "selection": {
+    "parameter_model": "persistence",
+    "parameter_scores": {
+      "ridge": 1.805169142187663,
+      "lstm": 2.2361596429696844,
+      "mean": 3.429518673791823,
+      "persistence": 0.026774891320788013
+    },
+    "parameter_criterion": "standardized transformed-parameter MSE",
+    "forecast_model": "mle_total_vol",
+    "forecast_scores": {
+      "training_mean": 0.07784762305986821,
+      "historical_21d": 0.06418456474449753,
+      "ewma": 0.058200819952434354,
+      "mle_total_vol": 0.056527723151967274,
+      "raw_mjd_total_vol": 0.05661627114565149,
+      "mean_total_vol": 0.11489593317124365,
+      "ridge_total_vol": 0.10424337002809415,
+      "lstm_total_vol": 0.11658611838639134,
+      "direct_ridge": 0.09112253869589272,
+      "direct_lstm": 0.07972397522739649
+    },
+    "forecast_criterion": "next-H-session annualized volatility RMSE",
+    "models_frozen_before_test": true,
+    "test_used_for_tuning": false,
+    "prior_test_exposure": "Supplied 2023 test results were already reported in the original project; this is a fixed rerun holdout, not a newly unseen dataset."
+  },
+  "elapsed_seconds": 39.454070124949794,
+  "warning_count": 0,
+  "reload_exact": true,
+  "single_vs_batch_tolerance": {
+    "rtol": 1e-06,
+    "atol": 1e-08
+  },
+  "source_sha256": {
+    "src/complete_pipeline.py": "e7fa64640d540ba689bd409cac31367be29e98f16cc42d1da7741d24d38181b9",
+    "src/finance_project/__init__.py": "d1510dca2d81cc1c4f48f5cec7b404b85aa272c791c79f6ae346081210fc3f57",
+    "src/finance_project/data.py": "f78295ddcdc428a4bcbec28283bd16279a8462d206e125071c1fd90f965d171e",
+    "src/finance_project/evaluation.py": "eac14a2daefae67cdf9719b5f5439b6163cb2c2d174d857314130d4a33d9ce0e",
+    "src/finance_project/features.py": "b13a98addb11879ab02c6e555d3a96894b3bf64608871ea032a542f1ff8aa3e2",
+    "src/finance_project/merton.py": "18c9d960d4ba66af7cd3de121cc403a10e99f7615aeef5d059343f90143cdfb6",
+    "src/finance_project/models.py": "2737fceb002a3dddaa672d6f3b5ab4cfde56915658ea964d54fee7cf123a2dc1",
+    "src/finance_project/pipeline.py": "a8ab52b8326fb6d79695ac7def1ff22507ba4dc2a95831d31e6ec51f522f68d8",
+    "src/finance_project/plotting.py": "8f35c6ecb3380534ef55ed6fd72ced5b755a5cf2ed595993cc440c69e59779bb",
+    "src/finance_project/reporting.py": "fa1221538107ba88fbc7091acf4fc3b68f5a0c21d9b92aaee4a3f1d10a3ad357",
+    "src/finance_project/units.py": "e193a0aadb617e2c5e74465d6f5e06c1118390fcba49ea6adf75dda3773b5ba8",
+    "src/finance_project/verification.py": "c67a56a9ef33feb2965a115a071b2ae1a7aa76666bd160ac1ed6ffe4acca1dbe",
+    "src/verify_project.py": "e199d8a76f2490e9ed29e28c2cfd39ff6940b8c4cd415af2ed5522dace6af486"
+  },
+  "generated_outputs": [
+    "data/processed/example_history.csv",
+    "data/processed/fit_targets.csv",
+    "data/processed/observations.csv",
+    "data/processed/test_targets.csv",
+    "data/processed/validation_targets.csv",
+    "models/parameters.joblib",
+    "models/parameters_lstm.pt",
+    "models/volatility.joblib",
+    "models/volatility_lstm.pt",
+    "report/presentation.html",
+    "report/project_summary.md",
+    "report/viva_questions.md",
+    "results/data_audit/calibration_diagnostics.csv",
+    "results/data_audit/data_audit.json",
+    "results/data_audit/optimizer_attempts.csv",
+    "results/data_audit/scaling.json",
+    "results/figures/calibration_diagnostics.png",
+    "results/figures/errors.png",
+    "results/figures/future_volatility.png",
+    "results/figures/parameters.png",
+    "results/figures/training.png",
+    "results/logs/run.log",
+    "results/logs/tests.log",
+    "results/logs/warnings.json",
+    "results/metrics/future_volatility.csv",
+    "results/metrics/model_candidates.csv",
+    "results/metrics/nonoverlapping_volatility.csv",
+    "results/metrics/parameter_metrics.csv",
+    "results/metrics/reconstructed_volatility.csv",
+    "results/metrics/selection.json",
+    "results/metrics/timing.json",
+    "results/metrics/training_history.csv",
+    "results/predictions/example_prediction.json",
+    "results/predictions/test_parameters.csv",
+    "results/predictions/test_volatility.csv",
+    "results/predictions/validation_parameters.csv",
+    "results/predictions/validation_volatility.csv"
+  ],
+  "omitted_final_incomplete_origins": 4,
+  "limitations": [
+    "Prior test exposure; no claim of a fresh unseen holdout.",
+    "Physical-measure calibration; not option-market pricing.",
+    "Raw price adjustment provenance unknown.",
+    "Overlapping windows and outcomes.",
+    "BIC is a conservative heuristic in a nonregular mixture, not a jump significance test."
+  ]
+}

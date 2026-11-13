@@ -1,0 +1,15 @@
+2026-10-28 14:04:09,678 INFO Starting fresh calibration and model training; no cached fits or weights reused.
+2026-10-28 14:04:37,551 INFO Chronological partitions: {'fit': {'n': 134, 'first_origin': '2019-08-01', 'last_origin': '2022-03-22', 'last_target_end': '2022-04-21'}, 'validation': {'n': 31, 'first_origin': '2022-04-27', 'last_origin': '2022-11-30', 'last_target_end': '2022-12-30'}, 'test': {'n': 46, 'first_origin': '2023-01-05', 'last_origin': '2023-11-28', 'last_target_end': '2023-12-28'}}
+2026-10-28 14:04:37,591 INFO fit MLE 1/134
+2026-10-28 14:04:38,261 INFO fit MLE 31/134
+2026-10-28 14:04:38,793 INFO fit MLE 61/134
+2026-10-28 14:04:39,408 INFO fit MLE 91/134
+2026-10-28 14:04:40,048 INFO fit MLE 121/134
+2026-10-28 14:04:40,330 INFO validation MLE 1/32
+2026-10-28 14:04:40,890 INFO validation MLE 31/32
+2026-10-28 14:04:41,873 INFO Fitted parameters: Ridge alpha=1.0; LSTM units=8
+2026-10-28 14:04:42,496 INFO Fitted volatility: Ridge alpha=100.0; LSTM units=16
+2026-10-28 14:04:42,517 INFO Choices locked before test: {'parameter_model': 'persistence', 'parameter_scores': {'ridge': 1.805169142187663, 'lstm': 2.2361596429696844, 'mean': 3.429518673791823, 'persistence': 0.026774891320788013}, 'parameter_criterion': 'standardized transformed-parameter MSE', 'forecast_model': 'mle_total_vol', 'forecast_scores': {'training_mean': 0.07784762305986821, 'historical_21d': 0.06418456474449753, 'ewma': 0.058200819952434354, 'mle_total_vol': 0.056527723151967274, 'raw_mjd_total_vol': 0.05661627114565149, 'mean_total_vol': 0.11489593317124365, 'ridge_total_vol': 0.10424337002809415, 'lstm_total_vol': 0.11658611838639134, 'direct_ridge': 0.09112253869589272, 'direct_lstm': 0.07972397522739649}, 'forecast_criterion': 'next-H-session annualized volatility RMSE', 'models_frozen_before_test': True, 'test_used_for_tuning': False, 'prior_test_exposure': 'Supplied 2023 test results were already reported in the original project; this is a fixed rerun holdout, not a newly unseen dataset.'}
+2026-10-28 14:04:42,548 INFO test MLE 1/47
+2026-10-28 14:04:43,207 INFO test MLE 31/47
+2026-10-28 14:04:48,352 INFO Run complete in 39.46 seconds; captured warnings=0

@@ -1,0 +1,345 @@
+You are a senior quantitative developer, statistical modeller, and machine-learning debugging engineer.
+
+I have uploaded my complete Deep Merton Jump-Diffusion project. Your responsibility is to independently inspect, reproduce, debug, repair, test, and complete the entire project, then return a clean final project folder that runs from beginning to end.
+
+Do not stop after fixing the first exception. Do not merely suppress warnings, wrap failing code in try/except, remove problematic observations, or modify plots to conceal poor results. Find and correct the underlying mathematical, statistical, data-processing, numerical, and software-engineering problems.
+
+============================================================
+PROJECT OBJECTIVE
+============================================================
+
+The project estimates rolling Merton Jump-Diffusion parameters from historical market data and uses statistical/ML models—such as a mean baseline, Ridge regression, and LSTM—to predict parameters and/or future volatility.
+
+The final implementation must:
+
+1. download or load the data;
+2. clean and validate it;
+3. calculate returns using a clearly documented convention;
+4. perform rolling Merton Jump-Diffusion MLE estimation;
+5. construct features and targets without look-ahead bias;
+6. split data chronologically;
+7. train all baselines and ML models;
+8. predict held-out parameters;
+9. reconstruct total volatility consistently;
+10. evaluate predictions against valid future realised-volatility targets;
+11. generate tables and plots;
+12. save reproducible results;
+13. run successfully from a clean environment.
+
+============================================================
+OBSERVED PROBLEMS
+============================================================
+
+Current outputs show several suspicious patterns:
+
+- LSTM training loss falls substantially while validation loss stays high and nearly flat.
+- Ridge parameter predictions are noisy and sometimes implausible.
+- LSTM predictions are excessively smooth and may be collapsing toward conditional averages.
+- Rolling MLE jump intensity lambda frequently equals zero or reaches its upper boundary.
+- Jump mean and jump-volatility estimates frequently approach imposed bounds.
+- MLE parameter paths exhibit abrupt spikes and discontinuities.
+- Predicted total volatility does not consistently follow future realised volatility.
+- Historical volatility sometimes performs as well as or better than the ML models.
+- Error distributions appear biased, wide, or model-dependent.
+- Training and validation losses may not be directly comparable because dropout appears enabled only for the training-loss calculation.
+- Parameter units, annualisation, target alignment, or total-volatility formulas may be inconsistent.
+
+Treat these as diagnostic clues, not conclusions. Verify every issue from the code and data.
+
+============================================================
+REQUIRED WORKFLOW
+============================================================
+
+PHASE 1 — REPOSITORY AUDIT
+
+Before editing anything:
+
+- Recursively inspect the complete repository.
+- Identify entry points, notebooks, modules, data files, configurations, saved artifacts, and dependencies.
+- Read all relevant code before proposing major changes.
+- Determine the intended pipeline and the actual pipeline.
+- Locate duplicated, dead, inconsistent, or partially implemented code.
+- Check whether notebooks and scripts implement different formulas or assumptions.
+- Produce a concise root-cause list supported by file names, functions, logs, tests, or numerical evidence.
+
+PHASE 2 — REPRODUCTION
+
+- Create or repair the environment specification.
+- Set deterministic random seeds where technically possible.
+- Run the existing pipeline unchanged first.
+- Capture every exception, warning, NaN, overflow, convergence failure, shape mismatch, and suspicious result.
+- Record software versions and execution commands.
+- Never claim an issue is resolved without rerunning the relevant code.
+
+PHASE 3 — DATA AND TIME-INDEX AUDIT
+
+Verify all of the following:
+
+- prices are correctly sorted chronologically;
+- duplicate dates and missing observations are handled explicitly;
+- adjusted versus unadjusted prices are used consistently;
+- simple returns and log returns are not mixed accidentally;
+- trading-day and calendar-day conventions are documented;
+- rolling windows contain only information available by each forecast origin;
+- features at time t do not contain data from t+1 or later;
+- target horizons have no off-by-one error;
+- train/validation/test sets are chronological;
+- overlapping targets are recognised when computing uncertainty;
+- scalers and imputers are fitted only on the training set;
+- feature selection and hyperparameter tuning never use the final test set;
+- predictions and references are joined by actual dates, not positional indices;
+- unavailable future observations at the end of the sample are excluded correctly.
+
+Add assertions or tests that make leakage and misalignment fail loudly.
+
+PHASE 4 — MERTON JUMP-DIFFUSION MATHEMATICS
+
+State the exact model used. For example:
+
+    r_t = (mu - 0.5*sigma^2 - lambda*kappa)*Delta_t
+          + sigma*sqrt(Delta_t)*epsilon_t
+          + sum_{i=1}^{N_t} Y_i
+
+where:
+
+    N_t ~ Poisson(lambda*Delta_t)
+    Y_i ~ Normal(mu_J, sigma_J^2)
+    kappa = exp(mu_J + 0.5*sigma_J^2) - 1
+
+If the project intentionally uses a different physical-measure convention, document and apply it consistently.
+
+Check:
+
+- whether mu, sigma, lambda, mu_J, and sigma_J are daily or annual quantities;
+- whether Delta_t is correct;
+- whether lambda means jumps per day or jumps per year;
+- whether drift compensation is appropriate for the chosen model;
+- whether the compound-Poisson normal-mixture likelihood is implemented correctly;
+- whether Poisson probabilities are numerically stable;
+- whether mixture truncation is adaptive and sufficiently accurate;
+- whether log-sum-exp is used instead of summing tiny likelihood values;
+- whether factorials, gamma functions, and exponentials are stable;
+- whether sigma > 0, sigma_J >= 0, and lambda >= 0 are guaranteed;
+- whether optimisation bounds are financially and statistically defensible;
+- whether the optimiser is identifying parameters or merely hitting bounds;
+- whether zero-jump and near-zero-jump cases are handled correctly;
+- whether multiple initialisations or warm starts are used appropriately;
+- whether convergence diagnostics and objective values are stored;
+- whether the likelihood is tested on simulated data with known parameters.
+
+Prefer smooth parameter transformations where appropriate, such as softplus or exponential transformations for positive parameters, rather than arbitrary clipping after optimisation.
+
+Do not force nonzero jumps merely to create visually interesting estimates. If jump parameters are weakly identified, report that honestly and consider regularisation, longer estimation windows, hierarchical shrinkage, or a simpler nested model.
+
+PHASE 5 — VOLATILITY DEFINITIONS AND UNITS
+
+Create one canonical module for units and volatility formulas.
+
+Verify the intended total instantaneous variance. Under the relevant Merton convention, a common form is:
+
+    V_total = sigma^2 + lambda*(sigma_J^2 + mu_J^2)
+
+and annualised total volatility is:
+
+    sigma_total,annual = sqrt(A * V_total,daily)
+
+when every input is expressed in compatible daily units and A is the documented number of trading days per year.
+
+Do not blindly apply this formula if the project uses another definition. Derive and document the exact formula used.
+
+Check for:
+
+- double annualisation;
+- missing square roots;
+- mixing variance and volatility;
+- mixing percent and decimal units;
+- inconsistent annualisation of lambda;
+- comparing instantaneous model volatility with a differently defined realised-volatility target;
+- incorrect horizon scaling.
+
+Define future realised volatility explicitly, including horizon H, demeaning convention, degrees of freedom, and annualisation. Use the same definition everywhere.
+
+PHASE 6 — BASELINES AND MACHINE-LEARNING PIPELINE
+
+Keep strong, correctly constructed benchmarks:
+
+- training-set mean;
+- historical volatility;
+- persistence/last-value prediction;
+- Ridge regression;
+- optionally EWMA or another simple volatility benchmark.
+
+For Ridge:
+
+- standardise features using training data only;
+- tune alpha using chronological validation or time-series cross-validation;
+- inspect multicollinearity and conditioning;
+- use transformations suitable for bounded or positive parameters;
+- inverse-transform predictions correctly;
+- prevent impossible predictions through principled output parameterisations;
+- report performance both per parameter and for reconstructed volatility.
+
+For the LSTM:
+
+- verify input tensor orientation and sequence construction;
+- ensure every target corresponds to the correct sequence end date;
+- fit all scalers only on training observations;
+- compare train and validation loss under the same inference mode;
+- calculate evaluation loss with dropout disabled for both datasets;
+- use appropriate capacity, dropout, weight decay, learning rate, gradient clipping, early stopping, and best-checkpoint restoration;
+- investigate whether the current model is overfitting;
+- compare it with a smaller network;
+- prevent shuffling that destroys temporal structure;
+- check whether targets have very different scales;
+- consider parameter-specific weighting or robust losses only when justified;
+- test direct total-volatility prediction against parameter prediction if scientifically useful;
+- never judge success from training loss alone.
+
+If predicting constrained parameters, use appropriate transformations:
+
+- positive parameters: log or softplus-based representation;
+- probabilities or bounded parameters: logistic transformation where applicable;
+- signed jump mean: retain a signed representation with justified bounds.
+
+Avoid silent clipping unless it is explicitly documented and evaluated.
+
+PHASE 7 — VALIDATION DESIGN
+
+Use a leakage-free chronological design:
+
+- development/training period;
+- chronological validation period;
+- untouched final test period;
+- or expanding/rolling walk-forward validation.
+
+Hyperparameters must be selected without examining the final test results.
+
+Report:
+
+- MAE;
+- RMSE;
+- bias or mean error;
+- correlation where meaningful;
+- out-of-sample R-squared relative to a declared benchmark;
+- error quantiles;
+- directional or regime-based performance where justified;
+- parameter-level metrics;
+- reconstructed-total-volatility metrics.
+
+Because forecast horizons may overlap, use appropriate caution or corrected inference when presenting confidence intervals or statistical comparisons.
+
+Include a model-comparison table. A complex model is not considered successful unless it improves out-of-sample performance relative to meaningful simple baselines.
+
+PHASE 8 — TESTS
+
+Add automated tests for at least:
+
+- return calculation;
+- date ordering;
+- rolling-window boundaries;
+- feature-target alignment;
+- absence of scaler leakage;
+- likelihood finiteness;
+- probability-mixture normalisation;
+- parameter transformations;
+- total-volatility formula;
+- annualisation and unit conversions;
+- sequence/target shapes;
+- deterministic inference;
+- saving and reloading models;
+- a small end-to-end smoke test;
+- recovery of approximate parameters from simulated Merton data.
+
+Tests should fail for genuine inconsistencies instead of merely checking that functions return something.
+
+PHASE 9 — SOFTWARE QUALITY
+
+Refactor only where it improves correctness and maintainability.
+
+The final project should have:
+
+- a clear entry point;
+- modular data, MLE, feature, model, evaluation, and plotting code;
+- central configuration;
+- no hard-coded machine-specific paths;
+- pathlib-based paths;
+- clear logging;
+- controlled random seeds;
+- saved intermediate diagnostics;
+- requirements.txt or pyproject.toml with compatible versions;
+- informative error messages;
+- no hidden dependence on notebook execution order;
+- documentation for every important modelling convention.
+
+Preserve useful existing work and avoid unnecessary rewrites.
+
+PHASE 10 — FINAL EXECUTION AND DELIVERABLES
+
+Run the repaired pipeline from a clean start.
+
+Return the complete corrected project folder, not isolated code fragments.
+
+The folder must include:
+
+1. corrected source code;
+2. corrected notebooks, if retained;
+3. dependency/environment file;
+4. configuration file;
+5. automated tests;
+6. README with exact installation and run commands;
+7. DEBUG_REPORT.md containing:
+   - observed problem;
+   - root cause;
+   - files/functions changed;
+   - mathematical or coding correction;
+   - verification performed;
+   - remaining limitations;
+8. final metric tables;
+9. final diagnostic plots;
+10. an execution log or concise run summary.
+
+Also include a short CHANGELOG.
+
+============================================================
+ACCEPTANCE CRITERIA
+============================================================
+
+Do not declare completion until:
+
+- the project runs end-to-end without unhandled exceptions;
+- no unexplained NaN or infinite values remain;
+- warnings have been resolved or explicitly justified;
+- chronological alignment tests pass;
+- leakage checks pass;
+- likelihood and unit tests pass;
+- parameter constraints are mathematically valid;
+- training and validation losses are compared consistently;
+- final metrics are generated from an untouched test set;
+- every plotted series uses correctly aligned dates and compatible units;
+- all results can be reproduced using documented commands;
+- the final folder contains no essential dependency on files that were not returned.
+
+============================================================
+IMPORTANT SCIENTIFIC RULES
+============================================================
+
+- Never fabricate improved metrics.
+- Never alter reference values merely to make predictions look better.
+- Never use test data for scaling, fitting, early stopping, or tuning.
+- Never hide failed convergence or boundary estimates.
+- Never claim that an LSTM is superior unless test evidence demonstrates it.
+- If the available dataset is too small for reliable deep learning, state this and retain the statistically stronger model.
+- Separate software bugs, model misspecification, estimator variance, weak parameter identifiability, and irreducible forecasting error.
+- A visually smoother prediction is not automatically more accurate.
+- Boundary-hitting MLE estimates may indicate weak identification, insufficient observations, inappropriate bounds, numerical instability, or a genuinely negligible jump component. Diagnose which explanation is supported.
+- If a requested result is statistically impossible or unsupported by the data, explain the limitation instead of manufacturing a result.
+
+Begin by printing:
+
+1. repository structure;
+2. reconstructed pipeline;
+3. reproducible list of current failures;
+4. ranked root-cause hypotheses;
+5. repair plan.
+
+Then execute the repair plan autonomously. Ask me a question only if an essential business or modelling decision cannot be inferred safely. Otherwise, make the most defensible documented choice, complete the work, run the tests, and return the entire final corrected folder.

@@ -1,0 +1,51 @@
+Project located. Raw data and source are available.
+
+No broken requirements found.
+Using this notebook's Python environment.
+
+2026-10-28 14:54:33,899 INFO Starting fresh calibration and model training; no cached fits or weights reused.
+2026-10-28 14:54:33,928 INFO Chronological partitions: {'fit': {'n': 134, 'first_origin': '2019-08-01', 'last_origin': '2022-03-22', 'last_target_end': '2022-04-21'}, 'validation': {'n': 31, 'first_origin': '2022-04-27', 'last_origin': '2022-11-30', 'last_target_end': '2022-12-30'}, 'test': {'n': 46, 'first_origin': '2023-01-05', 'last_origin': '2023-11-28', 'last_target_end': '2023-12-28'}}
+2026-10-28 14:54:33,946 INFO fit MLE 1/134
+
+2026-10-28 14:54:34,488 INFO fit MLE 31/134
+
+2026-10-28 14:54:34,938 INFO fit MLE 61/134
+
+2026-10-28 14:54:35,521 INFO fit MLE 91/134
+
+2026-10-28 14:54:36,121 INFO fit MLE 121/134
+
+2026-10-28 14:54:36,374 INFO validation MLE 1/32
+
+2026-10-28 14:54:36,899 INFO validation MLE 31/32
+
+2026-10-28 14:54:37,761 INFO Fitted parameters: Ridge alpha=1.0; LSTM units=8
+
+2026-10-28 14:54:38,225 INFO Fitted volatility: Ridge alpha=100.0; LSTM units=16
+2026-10-28 14:54:38,243 INFO Choices locked before test: {'parameter_model': 'persistence', 'parameter_scores': {'ridge': 1.805169142187663, 'lstm': 2.2361596429696844, 'mean': 3.429518673791823, 'persistence': 0.026774891320788013}, 'parameter_criterion': 'standardized transformed-parameter MSE', 'forecast_model': 'mle_total_vol', 'forecast_scores': {'training_mean': 0.07784762305986821, 'historical_21d': 0.06418456474449753, 'ewma': 0.058200819952434354, 'mle_total_vol': 0.056527723151967274, 'raw_mjd_total_vol': 0.05661627114565149, 'mean_total_vol': 0.11489593317124365, 'ridge_total_vol': 0.10424337002809415, 'lstm_total_vol': 0.11658611838639134, 'direct_ridge': 0.09112253869589272, 'direct_lstm': 0.07972397522739649}, 'forecast_criterion': 'next-H-session annualized volatility RMSE', 'models_frozen_before_test': True, 'test_used_for_tuning': False, 'prior_test_exposure': 'Supplied 2023 test results were already reported in the original project; this is a fixed rerun holdout, not a newly unseen dataset.'}
+2026-10-28 14:54:38,264 INFO test MLE 1/47
+
+2026-10-28 14:54:38,834 INFO test MLE 31/47
+
+2026-10-28 14:54:40,327 INFO Run complete in 7.13 seconds; captured warnings=0
+
+.........
+............
+.....                                               [100%]
+26 passed in 4.39s
+
+Raw-file SHA256 hashes verified
+Forward targets strictly precede the next split's first forecast origin
+All saved scaler means recomputed from fit data only
+Prediction/reference dates and source rows match raw observations
+Future labels independently recomputed from t+1 through t+H
+Saved Ridge/LSTM/mean inference matches all prediction CSVs
+Inference is deterministic
+Parameter and future-volatility metrics independently recompute
+Every calibration has a successful start and an adequate Poisson truncation
+Saved example prediction reproduces exactly
+No runtime warnings captured
+
+{'date': '2023-01-05', 'lstm_parameters': {'mu_log': 0.0010659282561391592, 'sigma': 0.008963979962245634, 'lambda': 0.05840964554405326, 'mu_j': 0.008635319769382477, 'sigma_j': 0.0037480883602232368}, 'direct_lstm_future_volatility': 0.16356387734413147}
+
+Completed results are saved in this project folder.

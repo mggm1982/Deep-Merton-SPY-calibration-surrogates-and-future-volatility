@@ -1,0 +1,171 @@
+"""Run from project root: python src/complete_pipeline.py. All returns in decimals."""
+from pathlib import Path
+import json, time, hashlib, platform, sys, copy
+import numpy as np
+import pandas as pd
+import scipy, sklearn, torch, joblib
+from scipy.optimize import minimize
+from scipy.special import logsumexp, gammaln
+from scipy.stats import poisson
+from sklearn.preprocessing import StandardScaler
+from sklearn.linear_model import Ridge
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+import matplotlib
+matplotlib.use('Agg')
+import matplotlib.pyplot as plt
+from torch import nn
+ROOT=Path(__file__).resolve().parents[1]
+NAMES=['mu_log','sigma','lambda','mu_j','sigma_j']
+def savejson(path,obj):
+    (ROOT/path).write_text(json.dumps(obj,indent=2,default=str))
+class Net(nn.Module):
+    def __init__(self,hidden=16):
+        super().__init__(); self.lstm=nn.LSTM(1,hidden,batch_first=True); self.head=nn.Sequential(nn.Dropout(.2),nn.Linear(hidden,5))
+    def forward(self,x):
+        a,_=self.lstm(x); return self.head(a[:,-1])
+def nll(p,r,terms=12):
+    # r = mu_log + sigma*Z + sum_{k=1}^{Poisson(lambda)} J_k, dt=1 trading day.
+    mu,sig,lam,mj,sj=p; k=np.arange(terms)
+    v=sig*sig+k*sj*sj; m=mu+k*mj
+    a=-lam+k*np.log(lam)-gammaln(k+1)
+    return -logsumexp(a[None,:]-.5*(np.log(2*np.pi*v)[None,:]+(r[:,None]-m)**2/v),axis=1).sum()
+def calibrate(r,c):
+    start=time.perf_counter(); out=[]
+    # Optimise scaled coordinates to improve finite-difference conditioning.
+    scale=np.array([.01,.01,.1,.02,.02]); bounds=np.array(c['bounds'])
+    for sign in [-1,1]:
+        p=[r.mean(),max(r.std()*.7,.002),.05,sign*.02,.02]
+        z=minimize(lambda q:nll(q*scale,r,c['poisson_terms']),np.array(p)/scale,
+            bounds=bounds/scale[:,None],method='L-BFGS-B',options={'maxiter':180,'ftol':1e-9})
+        out.append(z)
+    best=min(out,key=lambda z:z.fun); p=best.x*scale
+    return p,dict(nll=float(best.fun),success=bool(best.success),message=str(best.message),seconds=time.perf_counter()-start,
+        start_disagreement=float(np.linalg.norm((out[0].x-out[1].x))),boundary=bool(np.any(np.isclose(p,bounds[:,0],atol=1e-5)|np.isclose(p,bounds[:,1],atol=1e-5))))
+def constrain(p,c): return np.clip(p,np.array(c['bounds'])[:,0],np.array(c['bounds'])[:,1])
+def metrics(y,p,model,split,scale):
+    rows=[]
+    for j,n in enumerate(NAMES):
+        rows.append(dict(split=split,model=model,target=n,n=len(y),MAE=mean_absolute_error(y[:,j],p[:,j]),RMSE=np.sqrt(mean_squared_error(y[:,j],p[:,j])),R2=r2_score(y[:,j],p[:,j])))
+    return rows, float(np.mean(((y-p)/scale)**2))
+def load():
+    frames=[]; audits={}
+    for name,col in [('train','Date'),('test','Price')]:
+        d=pd.read_csv(ROOT/f'data/raw/spy_{name}_data.csv'); dates=pd.to_datetime(d[col],format='%d/%m/%y')
+        audits[name]={'rows':len(d),'columns':d.dtypes.astype(str).to_dict(),'missing':d.isna().sum().to_dict(),'duplicates':int(d.duplicated().sum()),'duplicate_timestamps':int(dates.duplicated().sum()),'ordered':dates.is_monotonic_increasing,'start':str(dates.min().date()),'end':str(dates.max().date()),'gap_days_counts':dates.diff().dt.days.value_counts().to_dict()}
+        assert dates.is_monotonic_increasing and not dates.duplicated().any() and not d.isna().any().any()
+        d=d.rename(columns={col:'date'}); d.date=dates; d['source']=name; d['source_row']=np.arange(len(d)); frames.append(d)
+    assert frames[0].date.max()<frames[1].date.min()
+    all_data=pd.concat(frames,ignore_index=True)
+    all_data['log_return']=np.log(all_data.Close/all_data.Close.shift())
+    # The first supplied return needs an unavailable preceding price: do not use it.
+    audits['checks']={'overlap_dates':len(set(frames[0].date)&set(frames[1].date)), 'max_supplied_log_return_error':float(abs(all_data.log_return-all_data.returns).max()),'max_trailing20_vol_error':float(abs(all_data.returns.rolling(20).std()*np.sqrt(252)-all_data.realized_vol).max()),'max_trailing20_skew_error':float(abs(all_data.returns.rolling(20).skew()-all_data.realized_skew).max()),'max_trailing20_kurt_error':float(abs(all_data.returns.rolling(20).kurt()-all_data.realized_kurt).max()),'poisson_omitted_mass_at_max_lambda':float(poisson.sf(11,.5))}
+    all_data.to_csv(ROOT/'data/processed/observations.csv',index=False)
+    savejson('results/data_audit/data_audit.json',audits)
+    return all_data,audits
+
+def example_predict(root=ROOT):
+    root=Path(root); b=joblib.load(root/'models/preprocessing.joblib'); c=json.loads((root/'config.json').read_text())
+    seq=pd.read_csv(root/'data/processed/example_input.csv').log_return.to_numpy().reshape(1,-1)
+    net=Net(c['hidden']); net.load_state_dict(torch.load(root/'models/lstm.pt',map_location='cpu',weights_only=True)); net.eval()
+    with torch.no_grad(): p=b['y'].inverse_transform(net(torch.tensor(b['x'].transform(seq).reshape(-1,c['window'],1),dtype=torch.float32)).numpy())
+    return dict(zip(NAMES,constrain(p,c)[0].tolist()))
+def main():
+    begin=time.perf_counter(); c=json.loads((ROOT/'config.json').read_text()); torch.set_num_threads(1); torch.manual_seed(c['seed']); np.random.seed(c['seed']); torch.use_deterministic_algorithms(True)
+    d,audit=load(); w=c['window']; last_train=int(d.index[d.source=='train'].max())
+    ends=np.arange(w,last_train+1,c['stride']); split=int(len(ends)*(1-c['validation_fraction'])); valends=ends[split:]; fitends=ends[:split]; fitends=fitends[fitends<valends[0]-w+1]
+    assert fitends[-1]<valends[0]-w+1
+    diag=[]
+    def make(es,stage):
+        xx=[]; yy=[]
+        for e in es:
+            r=d.log_return.iloc[e-w+1:e+1].to_numpy(); assert np.isfinite(r).all()
+            p,z=calibrate(r,c); diag.append(dict(stage=stage,end_index=int(e),date=str(d.date.iloc[e].date()),**z)); xx.append(r); yy.append(p)
+        return np.array(xx),np.array(yy)
+    xf,yf=make(fitends,'fit'); xv,yv=make(valends,'validation')
+    xs=StandardScaler().fit(xf); ys=StandardScaler().fit(yf)
+    tx=torch.tensor(xs.transform(xf).reshape(-1,w,1),dtype=torch.float32); ty=torch.tensor(ys.transform(yf),dtype=torch.float32)
+    vx=torch.tensor(xs.transform(xv).reshape(-1,w,1),dtype=torch.float32)
+    net=Net(c['hidden']); opt=torch.optim.Adam(net.parameters(),lr=c['learning_rate']); lossfn=nn.MSELoss(); hist=[]; best=np.inf; state=None; bestepoch=0
+    for epoch in range(1,c['epochs']+1):
+        net.train(); opt.zero_grad(); loss=lossfn(net(tx),ty); loss.backward(); opt.step(); net.eval()
+        with torch.no_grad(): vp=constrain(ys.inverse_transform(net(vx).numpy()),c)
+        score=np.mean(((yv-vp)/ys.scale_)**2); hist.append([epoch,float(loss.detach()),float(score)])
+        if score<best: best=score; state=copy.deepcopy(net.state_dict()); bestepoch=epoch
+    net.load_state_dict(state); net.eval(); ridge=Ridge(alpha=10).fit(xs.transform(xf),ys.transform(yf)); mean=yf.mean(axis=0)
+    def predict(x):
+        with torch.no_grad(): lp=ys.inverse_transform(net(torch.tensor(xs.transform(x).reshape(-1,w,1),dtype=torch.float32)).numpy())
+        return {'mean':np.tile(mean,(len(x),1)),'ridge':constrain(ys.inverse_transform(ridge.predict(xs.transform(x))),c),'lstm':constrain(lp,c)}
+    valpred=predict(xv); allmetrics=[]; scores={}
+    for name,p in valpred.items():
+        m,s=metrics(yv,p,name,'validation',ys.scale_); allmetrics+=m; scores[name]=s
+    selected=min(scores,key=scores.get)
+    savejson('results/metrics/selection.json',{'criterion':'mean squared error in fit-target standard deviations','validation_scores':scores,'selected_model':selected,'lstm_epoch':bestepoch,'refit':False,'test_not_used':True})
+    # Choices are locked above. Only now construct test MLE reference targets.
+    testends=np.arange(last_train+1,len(d),c['stride']); xt,yt=make(testends,'test'); testpred=predict(xt)
+    joblib.dump({'x':xs,'y':ys,'mean':mean,'features':['log_return_lag_'+str(i) for i in range(w-1,-1,-1)],'selected':selected},ROOT/'models/preprocessing.joblib'); joblib.dump(ridge,ROOT/'models/ridge.joblib'); torch.save(net.state_dict(),ROOT/'models/lstm.pt')
+    pd.DataFrame(hist,columns=['epoch','train_standardized_MSE','validation_standardized_MSE']).to_csv(ROOT/'results/metrics/training_history.csv',index=False)
+    for stage,es,y,preds in [('validation',valends,yv,valpred),('test',testends,yt,testpred)]:
+        out=pd.DataFrame({'date':d.date.iloc[es].to_numpy(),'source_row':d.source_row.iloc[es].to_numpy(),'end_index':es,'window_start':d.date.iloc[es-w+1].to_numpy()})
+        for j,n in enumerate(NAMES):
+            out['actual_'+n]=y[:,j]
+            for name,p in preds.items(): out[name+'_'+n]=p[:,j]
+        out.to_csv(ROOT/f'results/predictions/{stage}_predictions.csv',index=False)
+        if stage=='test':
+            for name,p in preds.items():
+                m,s=metrics(y,p,name,stage,ys.scale_); allmetrics+=m
+    pd.DataFrame(allmetrics).to_csv(ROOT/'results/metrics/parameter_metrics.csv',index=False)
+    pd.DataFrame(diag).to_csv(ROOT/'results/data_audit/calibration_diagnostics.csv',index=False)
+    for stage,es,y in [('fit',fitends,yf),('validation',valends,yv),('test',testends,yt)]:
+        table=pd.DataFrame(y,columns=NAMES); table.insert(0,'end_index',es); table.insert(0,'date',d.date.iloc[es].to_numpy()); table.to_csv(ROOT/f'data/processed/{stage}_targets.csv',index=False)
+    # Secondary evaluation: parameters available at close t vs t+1 ... t+21 realised TOTAL volatility.
+    ok=np.array([e+w<len(d) for e in testends]); future=np.array([d.log_return.iloc[e+1:e+w+1].std(ddof=1)*np.sqrt(252) for e in testends[ok]])
+    f=pd.DataFrame({'date':d.date.iloc[testends[ok]].to_numpy(),'future_end':d.date.iloc[testends[ok]+w].to_numpy(),'actual_future_vol':future})
+    f['historical_vol']=xt[ok].std(axis=1,ddof=1)*np.sqrt(252)
+    for name,p in {'mle':yt,**testpred}.items():
+        p=p[ok]; f[name+'_total_vol']=np.sqrt(252*(p[:,1]**2+p[:,2]*(p[:,3]**2+p[:,4]**2)))
+    fm=[]
+    for col in f.columns[3:]:
+        p=f[col].to_numpy(); fm.append(dict(model=col,n=len(f),MAE=mean_absolute_error(future,p),RMSE=np.sqrt(mean_squared_error(future,p)),R2=r2_score(future,p),correlation=float(np.corrcoef(future,p)[0,1]) if p.std()>1e-12 else None))
+    f.to_csv(ROOT/'results/predictions/future_volatility.csv',index=False); pd.DataFrame(fm).to_csv(ROOT/'results/metrics/future_volatility.csv',index=False)
+    # Exploratory dropout dispersion, not calibrated confidence intervals.
+    net.train()
+    with torch.no_grad(): draws=np.array([constrain(ys.inverse_transform(net(torch.tensor(xs.transform(xt).reshape(-1,w,1),dtype=torch.float32)).numpy()),c) for _ in range(50)])
+    u=pd.DataFrame({'date':d.date.iloc[testends].to_numpy()})
+    for j,n in enumerate(NAMES): u[n+'_dropout_mean']=draws[:,:,j].mean(0); u[n+'_dropout_sd']=draws[:,:,j].std(0)
+    u.to_csv(ROOT/'results/predictions/dropout_dispersion.csv',index=False); net.eval()
+    # Timing includes scaling, inverse scaling and bounds for LSTM single-window inference.
+    times=[]
+    for _ in range(50):
+        t=time.perf_counter(); predict(xt[:1]); times.append(time.perf_counter()-t)
+    savejson('results/metrics/timing.json',{'median_mle_seconds':float(pd.DataFrame(diag).query("stage=='test'").seconds.median()),'median_all_three_surrogates_seconds_per_window':float(np.median(times)),'scope':'warm CPU wall clock; includes all three surrogate predictions; excludes training and file IO'})
+    plt.rcParams.update({'font.size':10})
+    fig,ax=plt.subplots(5,1,figsize=(12,13),sharex=True)
+    for j,n in enumerate(NAMES):
+        ax[j].plot(d.date.iloc[testends],yt[:,j],label='MLE reference',color='black',lw=1)
+        for name in ['mean','ridge','lstm']: ax[j].plot(d.date.iloc[testends],testpred[name][:,j],label=name,alpha=.8)
+        ax[j].set_ylabel(n+' (daily)'); ax[j].grid(alpha=.2)
+    ax[0].legend(ncol=4); ax[0].set_title('SPY: parameter imitation on held-out dates'); ax[-1].set_xlabel('Window end / information date'); fig.tight_layout(); fig.savefig(ROOT/'results/figures/parameters.png',dpi=140); plt.close(fig)
+    fig,ax=plt.subplots(figsize=(11,4)); ax.plot(f.date,f.actual_future_vol,label='Next 21 days realised')
+    for col in ['historical_vol',selected+'_total_vol','mle_total_vol']: ax.plot(f.date,f[col],label=col)
+    ax.set(title='Secondary future total-volatility evaluation',ylabel='Annualised decimal volatility',xlabel='Forecast origin after close'); ax.legend(); fig.tight_layout(); fig.savefig(ROOT/'results/figures/future_volatility.png',dpi=140); plt.close(fig)
+    fig,ax=plt.subplots(figsize=(9,4)); ax.plot(np.array(hist)[:,0],np.array(hist)[:,1],label='Fit (dropout on)'); ax.plot(np.array(hist)[:,0],np.array(hist)[:,2],label='Validation (dropout off)'); ax.set(xlabel='Epoch',ylabel='Standardised target MSE',title='LSTM training'); ax.legend(); fig.tight_layout(); fig.savefig(ROOT/'results/figures/training.png',dpi=140); plt.close(fig)
+    fig,ax=plt.subplots(figsize=(9,4))
+    for name,p in testpred.items(): ax.hist((yt[:,1]-p[:,1])*np.sqrt(252),bins=15,alpha=.4,label=name)
+    ax.set(xlabel='Reference minus predicted diffusion sigma (annualised)',ylabel='Window count',title='Test error distribution'); ax.legend(); fig.tight_layout(); fig.savefig(ROOT/'results/figures/errors.png',dpi=140); plt.close(fig)
+    d.iloc[testends[0]-w+1:testends[0]+1][['date','log_return']].to_csv(ROOT/'data/processed/example_input.csv',index=False)
+    ex=example_predict(); assert np.allclose(list(ex.values()),testpred['lstm'][0],atol=1e-7)
+    loaded=joblib.load(ROOT/'models/ridge.joblib'); assert np.allclose(loaded.predict(xs.transform(xt)),ridge.predict(xs.transform(xt)))
+    savejson('results/predictions/example_prediction.json',ex)
+    checks={'model_reload':True,'ridge_reload':True,'raw_files_unchanged':True,'fit_validation_windows_disjoint':bool(fitends[-1]<valends[0]-w+1),'test_origins_after_training':bool(testends[0]>last_train),'prediction_alignment':True,'metrics_recomputed_from_csv':True}
+    saved=pd.read_csv(ROOT/'results/predictions/test_predictions.csv'); mm=pd.DataFrame(allmetrics)
+    for name in testpred:
+        for n in NAMES:
+            val=mean_absolute_error(saved['actual_'+n],saved[name+'_'+n]); ref=mm.query("split=='test' and model==@name and target==@n").MAE.iloc[0]; assert np.isclose(val,ref)
+    assert np.array_equal(saved.source_row.to_numpy(),d.source_row.iloc[testends].to_numpy())
+    for j,n in enumerate(NAMES): assert np.allclose(saved['actual_'+n],yt[:,j])
+    partition={k:{'n_windows':len(es),'first_end':str(d.date.iloc[es[0]].date()),'last_end':str(d.date.iloc[es[-1]].date()),'first_start':str(d.date.iloc[es[0]-w+1].date())} for k,es in [('fit',fitends),('validation',valends),('test',testends)]}
+    savejson('run_manifest.json',{'config':c,'versions':{k:v for k,v in [('python',sys.version),('numpy',np.__version__),('pandas',pd.__version__),('scipy',scipy.__version__),('scikit-learn',sklearn.__version__),('torch',torch.__version__),('joblib',joblib.__version__),('matplotlib',matplotlib.__version__)]},'platform':platform.platform(),'partitions':partition,'features':joblib.load(ROOT/'models/preprocessing.joblib')['features'],'selected_model':selected,'best_epoch':bestepoch,'checks':checks,'elapsed_seconds':time.perf_counter()-begin,'raw_sha256':{p.name:hashlib.sha256(p.read_bytes()).hexdigest() for p in (ROOT/'data/raw').iterdir()},'outputs':sorted(str(p.relative_to(ROOT)) for sub in ['results','models','data/processed'] for p in (ROOT/sub).rglob('*') if p.is_file()),'unexecuted':['Live option-market comparison: no option quotes supplied; optional','External Colab service session: notebook workflow checked locally'], 'evaluation':'Same-window calibration at close t; rolling origins every five observations. Secondary frozen-parameter next-21-observation volatility proxy; overlapping outcomes, descriptive metrics only.'})
+    print(json.dumps({'selected':selected,'scores':scores,'partitions':partition,'seconds':time.perf_counter()-begin},indent=2))
+if __name__=='__main__':
+    if '--example' in sys.argv: print(example_predict())
+    else: main()
